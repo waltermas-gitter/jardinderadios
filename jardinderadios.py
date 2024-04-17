@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-
+        # url = "https://manifest.googlevideo.com/api/manifest/hls_playlist/expire/1713403978/ei/6iMgZsKtGt2J4dUPubOD2Ag/ip/2001:13e8:e:13fe:a452:e14d:82b8:a4ca/id/shBvzTevAkw.1/itag/93/source/yt_live_broadcast/requiressl/yes/ratebypass/yes/live/1/sgoap/gir%3Dyes%3Bitag%3D140/sgovp/gir%3Dyes%3Bitag%3D134/rqh/1/hdlc/1/hls_chunk_host/rr2---sn-uxa8bb-gvne.googlevideo.com/xpc/EgVo2aDSNQ%3D%3D/spc/UWF9f9rokIYWF3p24RLEGD0myWJaQpIrk_Gd/vprv/1/playlist_type/LIVE/initcwndbps/412500/mh/Z8/mm/44/mn/sn-uxa8bb-gvne/ms/lva/mv/m/mvi/2/pl/51/dover/11/pacing/0/keepalive/yes/mt/1713381867/sparams/expire,ei,ip,id,itag,source,requiressl,ratebypass,live,sgoap,sgovp,rqh,hdlc,xpc,spc,vprv,playlist_type/sig/AJfQdSswRAIgSGmcfDltKM5RjTFPTZsh11eIQZImhqkiXis69JUK694CICT1RExUmKoKRLQ13Z0pHXm167WmF9G6M16XjbePjJmj/lsparams/hls_chunk_host,initcwndbps,mh,mm,mn,ms,mv,mvi,pl/lsig/ALClDIEwRgIhAPJVltPPcT-1o-ynJPyLVFw6952A7au5CNfmzkIzoBRXAiEAqFbm8YciqyQDCko_KzWY0GHYFrukTv_YJEBmpLvGzl4%3D/playlist/index.m3u8"
+        # yt-dlp --list-formats url
+        # yt-dlp -f <number> -g <url>
 import os, sys
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -7,6 +9,7 @@ from PyQt5.QtWidgets import *
 from PyQt5 import uic
 from PyQt5 import QtMultimedia, QtMultimediaWidgets
 from PyQt5.QtSql import *
+from PyQt5.QtMultimediaWidgets import QVideoWidget
 import requests
 import iconosResource_rc # pyrcc5 iconosResource.qrc -o iconosResource_rc.py
 
@@ -36,12 +39,19 @@ class Jardin(QMainWindow):
         # self.player.stateChanged.connect(self.handleStateChanged)
         self.player.mediaChanged.connect(self.mediaCambio)
         self.player.error.connect(self.mediaError)
+        # self.player.videoAvailableChanged.connect(self.conVideo)
+        self.videoWidget = QVideoWidget()
+        self.videoWidget.resize(QSize(400, 300))
+        self.videoPushButton.clicked.connect(self.showVideo)
+
         self.errorLabel.setStyleSheet("color: red")
         self.cb = QApplication.clipboard()
         self.st = QSystemTrayIcon(QIcon(":/iconos/antena.png"))
         self.st.show()
         self.salirPushButton.clicked.connect(self.close)
+        self.playPushButton.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
         self.playPushButton.clicked.connect(self.playCurrent)
+        self.stopPushButton.setIcon(self.style().standardIcon(QStyle.SP_MediaStop))
         self.stopPushButton.clicked.connect(self.stop)
         self.favPushButton.clicked.connect(self.agregarFav)
         self.quitarFavPushButton.clicked.connect(self.quitarFav)
@@ -286,6 +296,19 @@ class Jardin(QMainWindow):
 
     def mediaCambio(self):
         self.errorLabel.setText("")
+
+    def showVideo(self):
+        self.player.setVideoOutput(self.videoWidget)
+        self.videoWidget.show()
+        self.player.play()
+
+    # def conVideo(self):
+    #     print("video disponible")
+    #     print(self.player.isVideoAvailable())
+    #     self.player.setVideoOutput(self.videoWidget)
+    #     self.videoWidget.show()
+
+
 
 def main():
     app = QApplication(sys.argv)
