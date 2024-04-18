@@ -12,6 +12,8 @@ from PyQt5.QtSql import *
 from PyQt5.QtMultimediaWidgets import QVideoWidget
 import requests
 import iconosResource_rc # pyrcc5 iconosResource.qrc -o iconosResource_rc.py
+import subprocess
+
 
 
 # Create the connection
@@ -36,7 +38,7 @@ class Jardin(QMainWindow):
 
     def initUI(self):
         self.player = QtMultimedia.QMediaPlayer(self)
-        # self.player.stateChanged.connect(self.handleStateChanged)
+        self.player.stateChanged.connect(self.handleStateChanged)
         self.player.mediaChanged.connect(self.mediaCambio)
         self.player.error.connect(self.mediaError)
         # self.player.videoAvailableChanged.connect(self.conVideo)
@@ -105,6 +107,8 @@ class Jardin(QMainWindow):
         self.move(self.settings.value("pos", QPoint(50, 50)))
         self.show()
 
+        self.ultimoUrl = "radio"
+
 
     def play(self, url, subtitle, title, tag):
         self.player.setMedia(QtMultimedia.QMediaContent(QUrl(url)))
@@ -119,8 +123,8 @@ class Jardin(QMainWindow):
     def cambioVolumen(self):
         self.player.setVolume(self.volumeDial.value())
 
-    # def handleStateChanged(self, state):
-    #     print(state)
+    def handleStateChanged(self, state):
+        print(state)
         # if state == QtMultimedia.QMediaPlayer.StoppedState:
 
     def keyPressEvent(self, event):
@@ -177,6 +181,8 @@ class Jardin(QMainWindow):
             self.agregarHistorial(url, subtitle, title)
             self.play(url, subtitle, title, "")
 
+        self.ultimoUrl = url
+
     def agregarHistorial(self, url, subtitle, title):
         query = QSqlQuery("SELECT url FROM historial WHERE url='%s'" % url)
         query.last()
@@ -186,7 +192,8 @@ class Jardin(QMainWindow):
 
 
     def agregarFav(self):
-        url = self.player.currentMedia().request().url().toString()
+        # url = self.player.currentMedia().request().url().toString()
+        url = self.ultimoUrl
         if url == "": return
         query = QSqlQuery("SELECT url FROM favoritos WHERE url='%s'" % url)
         query.last()
@@ -289,18 +296,34 @@ class Jardin(QMainWindow):
 
     def playClipboard(self):
         url = self.cb.text()
-        self.play(self.cb.text(), "", "", "")
+        self.play(self.cb.text(), "Clipboard", "Clipboard", "")
 
     def mediaError(self, error):
+        # print(error)
+        # print(self.player.errorString())
         self.errorLabel.setText(self.player.errorString())
+        self.prueboYoutube()
+
+    def prueboYoutube(self):
+        youtubeUrl = self.player.currentMedia().request().url().toString()
+        result = subprocess.run(['./get-stream.sh', youtubeUrl], stdout=subprocess.PIPE)
+        url = result.stdout.decode('utf-8')
+        self.player.setMedia(QtMultimedia.QMediaContent(QUrl(url)))
+        self.player.play()
+        # print("despues:")
+        # print(self.player.MediaStatus())
+        # print(self.player.errorString())
+        self.ultimoUrl =  youtubeUrl
 
     def mediaCambio(self):
         self.errorLabel.setText("")
+        # self.media = "radio"
 
     def showVideo(self):
         self.player.setVideoOutput(self.videoWidget)
         self.videoWidget.show()
         self.player.play()
+        # print(self.ultimoUrl)
 
     # def conVideo(self):
     #     print("video disponible")
