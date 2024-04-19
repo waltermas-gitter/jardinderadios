@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-        # url = "https://manifest.googlevideo.com/api/manifest/hls_playlist/expire/1713403978/ei/6iMgZsKtGt2J4dUPubOD2Ag/ip/2001:13e8:e:13fe:a452:e14d:82b8:a4ca/id/shBvzTevAkw.1/itag/93/source/yt_live_broadcast/requiressl/yes/ratebypass/yes/live/1/sgoap/gir%3Dyes%3Bitag%3D140/sgovp/gir%3Dyes%3Bitag%3D134/rqh/1/hdlc/1/hls_chunk_host/rr2---sn-uxa8bb-gvne.googlevideo.com/xpc/EgVo2aDSNQ%3D%3D/spc/UWF9f9rokIYWF3p24RLEGD0myWJaQpIrk_Gd/vprv/1/playlist_type/LIVE/initcwndbps/412500/mh/Z8/mm/44/mn/sn-uxa8bb-gvne/ms/lva/mv/m/mvi/2/pl/51/dover/11/pacing/0/keepalive/yes/mt/1713381867/sparams/expire,ei,ip,id,itag,source,requiressl,ratebypass,live,sgoap,sgovp,rqh,hdlc,xpc,spc,vprv,playlist_type/sig/AJfQdSswRAIgSGmcfDltKM5RjTFPTZsh11eIQZImhqkiXis69JUK694CICT1RExUmKoKRLQ13Z0pHXm167WmF9G6M16XjbePjJmj/lsparams/hls_chunk_host,initcwndbps,mh,mm,mn,ms,mv,mvi,pl/lsig/ALClDIEwRgIhAPJVltPPcT-1o-ynJPyLVFw6952A7au5CNfmzkIzoBRXAiEAqFbm8YciqyQDCko_KzWY0GHYFrukTv_YJEBmpLvGzl4%3D/playlist/index.m3u8"
-        # yt-dlp --list-formats url
-        # yt-dlp -f <number> -g <url>
+#
 import os, sys
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -29,6 +27,24 @@ if not con.open():
     )
     sys.exit(1)
 
+class Video(QVideoWidget):
+    def __init__(self):
+        super().__init__()
+        self.initUI()
+
+    def initUI(self):
+        self.settings = QSettings( 'waltermas', 'jardinderadios-video')
+        self.resize(self.settings.value("size", QSize(400, 300)))
+        self.move(self.settings.value("pos", QPoint(50, 50)))
+        # self.setWindowFlags(Qt.Window | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
+        self.setWindowFlags(Qt.WindowStaysOnTopHint)
+
+    def closeEvent(self, event):
+        print("close video")
+        self.settings.setValue("size", self.size())
+        self.settings.setValue("pos", self.pos())
+        event.accept()
+
 
 class Jardin(QMainWindow):
     def __init__(self):
@@ -42,8 +58,9 @@ class Jardin(QMainWindow):
         self.player.mediaChanged.connect(self.mediaCambio)
         self.player.error.connect(self.mediaError)
         # self.player.videoAvailableChanged.connect(self.conVideo)
-        self.videoWidget = QVideoWidget()
-        self.videoWidget.resize(QSize(400, 300))
+        # self.videoWidget = QVideoWidget()
+        self.videoWidget = Video()
+        # self.videoWidget.resize(QSize(400, 300))
         self.videoPushButton.clicked.connect(self.showVideo)
 
         self.errorLabel.setStyleSheet("color: red")
@@ -124,7 +141,8 @@ class Jardin(QMainWindow):
         self.player.setVolume(self.volumeDial.value())
 
     def handleStateChanged(self, state):
-        print(state)
+        pass
+        # print(state)
         # if state == QtMultimedia.QMediaPlayer.StoppedState:
 
     def keyPressEvent(self, event):
@@ -159,6 +177,7 @@ class Jardin(QMainWindow):
 
     def playCurrent(self):
         if self.tabWidget.currentIndex() == 1:
+            if self.buscarTableWidget.currentRow() == -1: return
             ID = self.buscarTableWidget.item(self.buscarTableWidget.currentRow(), 2).text()[-8:]
             url = "http://radio.garden/api/ara/content/listen/%s/channel.mp3" % ID
             subtitle = self.buscarTableWidget.item(self.buscarTableWidget.currentRow(), 0).text()
@@ -167,6 +186,7 @@ class Jardin(QMainWindow):
             self.play(url, subtitle, title, "")
 
         elif self.tabWidget.currentIndex() == 0:
+            if self.favoritosTableWidget.currentRow() == -1: return
             url = self.favoritosTableWidget.item(self.favoritosTableWidget.currentRow(),2).text()
             subtitle = self.favoritosTableWidget.item(self.favoritosTableWidget.currentRow(), 0).text()
             title = self.favoritosTableWidget.item(self.favoritosTableWidget.currentRow(), 1).text()
@@ -175,6 +195,7 @@ class Jardin(QMainWindow):
             self.play(url, subtitle, title, tag)
 
         elif self.tabWidget.currentIndex() == 2:
+            if self.historialTableWidget.currentRow() == -1: return
             url = self.historialTableWidget.item(self.historialTableWidget.currentRow(),2).text()
             subtitle = self.historialTableWidget.item(self.historialTableWidget.currentRow(), 0).text()
             title = self.historialTableWidget.item(self.historialTableWidget.currentRow(), 1).text()
@@ -287,7 +308,8 @@ class Jardin(QMainWindow):
             self.buscarComboBox.addItem(query.value(1))
 
     def cambioMetadata(self):
-        query = QSqlQuery("SELECT id FROM favoritos WHERE url='%s'" % self.player.currentMedia().request().url().toString())
+        query = QSqlQuery("SELECT id FROM favoritos WHERE url='%s'" % self.ultimoUrl)
+        # query = QSqlQuery("SELECT id FROM favoritos WHERE url='%s'" % self.player.currentMedia().request().url().toString())
         query.last()
         if query.isValid():
             query = QSqlQuery("UPDATE favoritos SET subtitle='%s', title='%s', tag='%s' WHERE id='%s'" %
@@ -299,8 +321,6 @@ class Jardin(QMainWindow):
         self.play(self.cb.text(), "Clipboard", "Clipboard", "")
 
     def mediaError(self, error):
-        # print(error)
-        # print(self.player.errorString())
         self.errorLabel.setText(self.player.errorString())
         self.prueboYoutube()
 
@@ -310,27 +330,15 @@ class Jardin(QMainWindow):
         url = result.stdout.decode('utf-8')
         self.player.setMedia(QtMultimedia.QMediaContent(QUrl(url)))
         self.player.play()
-        # print("despues:")
-        # print(self.player.MediaStatus())
-        # print(self.player.errorString())
         self.ultimoUrl =  youtubeUrl
 
     def mediaCambio(self):
         self.errorLabel.setText("")
-        # self.media = "radio"
 
     def showVideo(self):
         self.player.setVideoOutput(self.videoWidget)
         self.videoWidget.show()
-        self.player.play()
-        # print(self.ultimoUrl)
-
-    # def conVideo(self):
-    #     print("video disponible")
-    #     print(self.player.isVideoAvailable())
-    #     self.player.setVideoOutput(self.videoWidget)
-    #     self.videoWidget.show()
-
+        self.playCurrent()
 
 
 def main():
