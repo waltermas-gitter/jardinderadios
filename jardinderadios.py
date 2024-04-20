@@ -11,6 +11,7 @@ from PyQt5.QtMultimediaWidgets import QVideoWidget
 import requests
 import iconosResource_rc # pyrcc5 iconosResource.qrc -o iconosResource_rc.py
 import subprocess
+from qt_material import apply_stylesheet
 
 
 
@@ -55,15 +56,15 @@ class Jardin(QMainWindow):
     def initUI(self):
         self.player = QtMultimedia.QMediaPlayer(self)
         self.player.stateChanged.connect(self.handleStateChanged)
-        self.player.mediaChanged.connect(self.mediaCambio)
+        # self.player.mediaChanged.connect(self.mediaCambio)
         self.player.error.connect(self.mediaError)
         # self.player.videoAvailableChanged.connect(self.conVideo)
         # self.videoWidget = QVideoWidget()
         self.videoWidget = Video()
         # self.videoWidget.resize(QSize(400, 300))
         self.videoPushButton.clicked.connect(self.showVideo)
-
-        self.errorLabel.setStyleSheet("color: red")
+        self.buscarPushButton.clicked.connect(self.buscar)
+        # self.errorLabel.setStyleSheet("color: red")
         self.cb = QApplication.clipboard()
         self.st = QSystemTrayIcon(QIcon(":/iconos/antena.png"))
         self.st.show()
@@ -321,7 +322,7 @@ class Jardin(QMainWindow):
         self.play(self.cb.text(), "Clipboard", "Clipboard", "")
 
     def mediaError(self, error):
-        self.errorLabel.setText(self.player.errorString())
+        # self.errorLabel.setText(self.player.errorString())
         self.prueboYoutube()
 
     def prueboYoutube(self):
@@ -332,8 +333,8 @@ class Jardin(QMainWindow):
         self.player.play()
         self.ultimoUrl =  youtubeUrl
 
-    def mediaCambio(self):
-        self.errorLabel.setText("")
+    # def mediaCambio(self):
+        # self.errorLabel.setText("")
 
     def showVideo(self):
         self.player.setVideoOutput(self.videoWidget)
@@ -343,6 +344,7 @@ class Jardin(QMainWindow):
 
 def main():
     app = QApplication(sys.argv)
+    apply_stylesheet(app, theme='dark_teal.xml')
     ex = Jardin()
     sys.exit(app.exec_())
 
