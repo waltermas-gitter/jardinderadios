@@ -12,7 +12,7 @@ import requests
 import iconosResource_rc # pyrcc5 iconosResource.qrc -o iconosResource_rc.py
 import subprocess
 from qt_material import apply_stylesheet
-
+from youtubesearchpython import VideosSearch
 
 
 # Create the connection
@@ -104,6 +104,16 @@ class Jardin(QMainWindow):
         self.historialTableWidget.setColumnWidth(2,160)
         self.historialTableWidget.itemDoubleClicked.connect(self.playCurrent)
 
+        self.youtubeTableWidget.setColumnCount(4)
+        self.youtubeTableWidget.setSelectionBehavior(QTableView.SelectRows)
+        self.youtubeTableWidget.setHorizontalHeaderLabels(["Id", "Title", "Duration", "Views"])
+        self.youtubeTableWidget.setColumnWidth(0,160)
+        self.youtubeTableWidget.setColumnWidth(1,160)
+        self.youtubeTableWidget.setColumnWidth(2,160)
+        self.youtubeTableWidget.setColumnWidth(3,160)
+        self.youtubeTableWidget.itemDoubleClicked.connect(self.playCurrent)
+        self.ytBuscarPushButton.clicked.connect(self.buscarYoutube)
+
         self.volumeDial.setMinimum(0)
         self.volumeDial.setMaximum(100)
         self.volumeDial.valueChanged.connect(self.cambioVolumen)
@@ -155,10 +165,10 @@ class Jardin(QMainWindow):
 
     def buscar(self):
         buscado = self.buscarComboBox.currentText()
-        query = QSqlQuery("SELECT busqueda FROM busquedas WHERE busqueda='%s'" % buscado)
+        query = QSqlQuery('SELECT busqueda FROM busquedas WHERE busqueda="%s"' % buscado)
         query.last()
         if query.isValid() == False:
-            query = QSqlQuery("INSERT INTO busquedas (busqueda) VALUES ('%s')" % buscado)
+            query = QSqlQuery('INSERT INTO busquedas (busqueda) VALUES ("%s")' % buscado)
         r = requests.get("http://radio.garden/api/search?q=%s" % buscado)
         self.buscarTableWidget.setRowCount(0)
         rows = self.buscarTableWidget.rowCount()
@@ -203,13 +213,25 @@ class Jardin(QMainWindow):
             self.agregarHistorial(url, subtitle, title)
             self.play(url, subtitle, title, "")
 
+        elif self.tabWidget.currentIndex() == 3:
+            if self.youtubeTableWidget.currentRow() == -1: return
+            idurl = self.youtubeTableWidget.item(self.youtubeTableWidget.currentRow(),0).text()
+            url = "https://www.youtube.com/watch?v=%s" % idurl
+            subtitle = self.youtubeTableWidget.item(self.youtubeTableWidget.currentRow(), 1).text()
+            title = ""
+            tag = ""
+            self.agregarHistorial(url, subtitle, title)
+            self.play(url, subtitle, title, tag)
+
         self.ultimoUrl = url
 
     def agregarHistorial(self, url, subtitle, title):
+        print("agrego al historial %s" % url)
         query = QSqlQuery("SELECT url FROM historial WHERE url='%s'" % url)
         query.last()
         if query.isValid(): return
-        query = QSqlQuery("INSERT INTO historial (subtitle, title, url) VALUES ('%s', '%s', '%s')" % (subtitle, title, url))
+        print("agregando")
+        query = QSqlQuery('INSERT INTO historial (subtitle, title, url) VALUES ("%s", "%s", "%s")' % (subtitle, title, url))
         self.loadHistorial()
 
 
@@ -223,7 +245,7 @@ class Jardin(QMainWindow):
         query = QSqlQuery("SELECT orden FROM favoritos ORDER BY orden")
         query.last()
         ultimoOrden = query.value(0)
-        query = QSqlQuery("INSERT INTO favoritos (subtitle, title, url, orden, tag) VALUES ('%s', '%s', '%s', '%s','%s')" % (self.subtitleLineEdit.text(),
+        query = QSqlQuery('INSERT INTO favoritos (subtitle, title, url, orden, tag) VALUES ("%s", "%s", "%s", "%s","%s")' % (self.subtitleLineEdit.text(),
                         self.titleLineEdit.text(),
                         url, ultimoOrden + 1,
                         self.tagLineEdit.text()))
@@ -341,6 +363,19 @@ class Jardin(QMainWindow):
         self.videoWidget.show()
         self.playCurrent()
 
+    def buscarYoutube(self):
+        busqueda = self.youtubeLineEdit.text()
+        videosSearch = VideosSearch(busqueda)
+        res = videosSearch.result()
+        self.youtubeTableWidget.setRowCount(0)
+        rows = self.youtubeTableWidget.rowCount()
+        for item in res['result']:
+            self.youtubeTableWidget.setRowCount(rows + 1)
+            self.youtubeTableWidget.setItem(rows, 0, QTableWidgetItem(item['id']))
+            self.youtubeTableWidget.setItem(rows, 1, QTableWidgetItem(item['title']))
+            self.youtubeTableWidget.setItem(rows, 2, QTableWidgetItem(item['duration']))
+            self.youtubeTableWidget.setItem(rows, 3, QTableWidgetItem(item['viewCount']['short']))
+            rows+=1
 
 def main():
     app = QApplication(sys.argv)
