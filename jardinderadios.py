@@ -55,9 +55,9 @@ class Jardin(QMainWindow):
 
     def initUI(self):
         self.player = QtMultimedia.QMediaPlayer(self)
-        self.player.stateChanged.connect(self.handleStateChanged)
+        self.player.mediaStatusChanged.connect(self.handleStateChanged)
+        self.player.error.connect(self.handleError)
         # self.player.mediaChanged.connect(self.mediaCambio)
-        self.player.error.connect(self.mediaError)
         # self.player.videoAvailableChanged.connect(self.conVideo)
         # self.videoWidget = QVideoWidget()
         self.videoWidget = Video()
@@ -66,8 +66,9 @@ class Jardin(QMainWindow):
         self.buscarPushButton.clicked.connect(self.buscar)
         # self.errorLabel.setStyleSheet("color: red")
         self.cb = QApplication.clipboard()
-        # self.st = QSystemTrayIcon(QIcon(":/iconos/antena.png"))
-        # self.st.show()
+        self.st = QSystemTrayIcon(QIcon(":/iconos/antena.png"))
+        self.st.activated.connect(self.iconoClick)
+        self.st.show()
         self.salirPushButton.clicked.connect(self.close)
         self.playPushButton.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
         self.playPushButton.clicked.connect(self.playCurrent)
@@ -159,9 +160,21 @@ class Jardin(QMainWindow):
         self.player.setVolume(self.volumeDial.value())
 
     def handleStateChanged(self, state):
-        pass
-        # print(state)
-        # if state == QtMultimedia.QMediaPlayer.StoppedState:
+        if state == 0: estado = "Unknowed"
+        if state == 1: estado = "No media"
+        if state == 2: estado = "Loading"
+        if state == 3: estado = "Loaded"
+        if state == 4: estado = "Stalled"
+        if state == 5: estado = "Buffering"
+        if state == 6: estado = "Buffered"
+        if state == 7: estado = "End"
+        if state == 8: estado = "Invalid media"
+        self.infoLabel.setText(estado)
+        self.errorLabel.setText("")
+
+    def handleError(self, error):
+        self.errorLabel.setText(self.player.errorString())
+
 
     def keyPressEvent(self, event):
         if self.focusWidget().objectName() == "buscarComboBox":
@@ -356,13 +369,7 @@ class Jardin(QMainWindow):
             self.loadFavoritos()
 
     def playClipboard(self):
-        url = self.cb.text()
         self.play(self.cb.text(), "Clipboard", "")
-
-    def mediaError(self, error):
-        # self.errorLabel.setText(self.player.errorString())
-        # self.prueboYoutube()
-        print("media error")
 
     def prueboYoutube(self, youtubeUrl):
         # youtubeUrl = self.player.currentMedia().request().url().toString()
@@ -373,8 +380,6 @@ class Jardin(QMainWindow):
         # self.ultimoUrl =  youtubeUrl
         return url
 
-    # def mediaCambio(self):
-        # self.errorLabel.setText("")
 
     def showVideo(self):
         self.player.setVideoOutput(self.videoWidget)
@@ -398,6 +403,12 @@ class Jardin(QMainWindow):
             self.youtubeTableWidget.setItem(rows, 2, QTableWidgetItem(item['duration']))
             self.youtubeTableWidget.setItem(rows, 3, QTableWidgetItem(item['viewCount']['short'][:-6]))
             rows+=1
+
+    def iconoClick(self, reason):
+        # print(self.player.state())
+        if reason == 3:
+            if self.player.state() == 0: self.player.play()
+            if self.player.state() == 1: self.player.stop()
 
 def main():
     app = QApplication(sys.argv)
