@@ -41,7 +41,6 @@ class Video(QVideoWidget):
         self.setWindowFlags(Qt.WindowStaysOnTopHint)
 
     def closeEvent(self, event):
-        print("close video")
         self.settings.setValue("size", self.size())
         self.settings.setValue("pos", self.pos())
         event.accept()
@@ -65,7 +64,6 @@ class Jardin(QMainWindow):
         # self.player.mediaChanged.connect(self.mediaCambio)
         # self.player.videoAvailableChanged.connect(self.conVideo)
         self.fileMenu = QMenu("&File")
-        # self.videoWidget = QVideoWidget()
         self.videoWidget = Video()
         # self.videoWidget.resize(QSize(400, 300))
         self.videoPushButton.clicked.connect(self.showVideo)
@@ -100,7 +98,6 @@ class Jardin(QMainWindow):
         self.buscarTableWidget.setHorizontalHeaderLabels(["Title", "Url"])
         self.buscarTableWidget.setColumnWidth(0,200)
         self.buscarTableWidget.setColumnWidth(1,350)
-        # self.buscarTableWidget.setColumnWidth(2,160)
         self.buscarTableWidget.itemDoubleClicked.connect(self.playCurrent)
 
         self.historialTableWidget.setColumnCount(2)
@@ -108,7 +105,6 @@ class Jardin(QMainWindow):
         self.historialTableWidget.setHorizontalHeaderLabels(["Title", "Url"])
         self.historialTableWidget.setColumnWidth(0,200)
         self.historialTableWidget.setColumnWidth(1,350)
-        # self.historialTableWidget.setColumnWidth(2,160)
         self.historialTableWidget.itemDoubleClicked.connect(self.playCurrent)
 
         self.youtubeTableWidget.setColumnCount(4)
@@ -128,7 +124,6 @@ class Jardin(QMainWindow):
         query.last()
         self.volumeDial.setValue(query.value(0))
 
-        # self.subtitleLineEdit.editingFinished.connect(self.cambioMetadata)
         self.titleLineEdit.editingFinished.connect(self.cambioMetadata)
         self.tagLineEdit.editingFinished.connect(self.cambioMetadata)
 
@@ -216,14 +211,7 @@ class Jardin(QMainWindow):
         rows = self.buscarTableWidget.rowCount()
         resp = r.json()
         for item in resp['hits']['hits']:
-            # print(item['_source']['subtitle'])
-            # print(item['_source']['title'])
-            # print(item['_source']['url'])
             self.buscarTableWidget.setRowCount(rows + 1)
-            # if 'subtitle' in item['_source']:
-            #     self.buscarTableWidget.setItem(rows, 0, QTableWidgetItem(item['_source']['subtitle']))
-            # else:
-            #     self.buscarTableWidget.setItem(rows, 0, QTableWidgetItem('sin nombre'))
             self.buscarTableWidget.setItem(rows, 0, QTableWidgetItem(item['_source']['title']))
             self.buscarTableWidget.setItem(rows, 1, QTableWidgetItem(item['_source']['url']))
             rows+=1
@@ -234,36 +222,28 @@ class Jardin(QMainWindow):
             if self.buscarTableWidget.currentRow() == -1: return
             ID = self.buscarTableWidget.item(self.buscarTableWidget.currentRow(), 1).text()[-8:]
             url = "http://radio.garden/api/ara/content/listen/%s/channel.mp3" % ID
-            # subtitle = self.buscarTableWidget.item(self.buscarTableWidget.currentRow(), 0).text()
             title = self.buscarTableWidget.item(self.buscarTableWidget.currentRow(), 0).text()
-            # self.agregarHistorial(url, subtitle, title)
             self.play(url, title, "")
 
         elif self.tabWidget.currentIndex() == 0:
             if self.favoritosTableWidget.currentRow() == -1: return
             url = self.favoritosTableWidget.item(self.favoritosTableWidget.currentRow(),1).text()
-            # subtitle = self.favoritosTableWidget.item(self.favoritosTableWidget.currentRow(), 0).text()
             title = self.favoritosTableWidget.item(self.favoritosTableWidget.currentRow(), 0).text()
             tag = self.favoritosTableWidget.item(self.favoritosTableWidget.currentRow(), 2).text()
-            # self.agregarHistorial(url, title)
             self.play(url, title, tag)
 
         elif self.tabWidget.currentIndex() == 2:
             if self.historialTableWidget.currentRow() == -1: return
             url = self.historialTableWidget.item(self.historialTableWidget.currentRow(),1).text()
-            # subtitle = self.historialTableWidget.item(self.historialTableWidget.currentRow(), 0).text()
             title = self.historialTableWidget.item(self.historialTableWidget.currentRow(), 0).text()
-            # self.agregarHistorial(url, subtitle, title)
             self.play(url, title, "")
 
         elif self.tabWidget.currentIndex() == 3:
             if self.youtubeTableWidget.currentRow() == -1: return
             idurl = self.youtubeTableWidget.item(self.youtubeTableWidget.currentRow(),0).text()
             url = "https://www.youtube.com/watch?v=%s" % idurl
-            # subtitle = self.youtubeTableWidget.item(self.youtubeTableWidget.currentRow(), 1).text()
             title = self.youtubeTableWidget.item(self.youtubeTableWidget.currentRow(),1).text()
             tag = "youtube music"
-            # self.agregarHistorial(url, subtitle, title)
             self.play(url, title, tag)
 
 
@@ -276,9 +256,6 @@ class Jardin(QMainWindow):
 
 
     def agregarFav(self):
-        # url = self.player.currentMedia().request().url().toString()
-        # url = self.ultimoUrl
-        # if url == "": return
         query = QSqlQuery("SELECT url FROM favoritos WHERE url='%s'" % self.playingNow)
         query.last()
         if query.isValid(): return
@@ -348,7 +325,6 @@ class Jardin(QMainWindow):
             self.favoritosTableWidget.setRowCount(rows + 1)
             self.favoritosTableWidget.setItem(rows, 0, QTableWidgetItem(query.value(1)))
             self.favoritosTableWidget.setItem(rows, 1, QTableWidgetItem(query.value(2)))
-            # self.favoritosTableWidget.setItem(rows, 2, QTableWidgetItem(query.value(3)))
             self.favoritosTableWidget.setItem(rows, 2, QTableWidgetItem(query.value(4)))
             self.favoritosTableWidget.item(rows, 2).setTextAlignment(Qt.AlignCenter)
             rows+=1
@@ -360,10 +336,9 @@ class Jardin(QMainWindow):
 
         self.fileMenu.clear()
         for item in testItems:
-            print(item)
             action = self.fileMenu.addAction(item)
             action.triggered.connect(
-                lambda chk, item=item: self.printItem(item))
+                lambda chk, item=item: self.playContextMenu(item))
         self.st.setContextMenu(self.fileMenu)
 
 
@@ -375,7 +350,6 @@ class Jardin(QMainWindow):
             self.historialTableWidget.setRowCount(rows + 1)
             self.historialTableWidget.setItem(rows, 0, QTableWidgetItem(query.value(1)))
             self.historialTableWidget.setItem(rows, 1, QTableWidgetItem(query.value(2)))
-            # self.historialTableWidget.setItem(rows, 2, QTableWidgetItem(query.value(3)))
             rows+=1
 
     def loadBusquedas(self):
@@ -392,7 +366,6 @@ class Jardin(QMainWindow):
 
     def cambioMetadata(self):
         query = QSqlQuery("SELECT id FROM favoritos WHERE url='%s'" % self.playingNow)
-        # query = QSqlQuery("SELECT id FROM favoritos WHERE url='%s'" % self.player.currentMedia().request().url().toString())
         query.last()
         if query.isValid():
             query = QSqlQuery("UPDATE favoritos SET title='%s', tag='%s' WHERE id='%s'" %
@@ -403,12 +376,8 @@ class Jardin(QMainWindow):
         self.play(self.cb.text(), "Clipboard", "")
 
     def prueboYoutube(self, youtubeUrl):
-        # youtubeUrl = self.player.currentMedia().request().url().toString()
         result = subprocess.run(['./get-stream.sh', youtubeUrl], stdout=subprocess.PIPE)
         url = result.stdout.decode('utf-8')
-        # self.player.setMedia(QtMultimedia.QMediaContent(QUrl(url)))
-        # self.player.play()
-        # self.ultimoUrl =  youtubeUrl
         return url
 
 
@@ -458,9 +427,10 @@ class Jardin(QMainWindow):
         self.timeSlider.blockSignals(False)
 
 
-    def printItem(self, item):
-        print("holis action")
-        print(item)
+    def playContextMenu(self, item):
+        it = self.favoritosTableWidget.findItems(item, Qt.MatchExactly)
+        self.favoritosTableWidget.setCurrentItem(self.favoritosTableWidget.item(it[0].row(),0))
+        self.play(self.favoritosTableWidget.item(it[0].row(),1).text(), self.favoritosTableWidget.item(it[0].row(),0).text(), self.favoritosTableWidget.item(it[0].row(),2).text())
 
 def main():
     app = QApplication(sys.argv)
