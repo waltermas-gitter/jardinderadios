@@ -57,8 +57,14 @@ class Jardin(QMainWindow):
         self.player = QtMultimedia.QMediaPlayer(self)
         self.player.mediaStatusChanged.connect(self.handleStateChanged)
         self.player.error.connect(self.handleError)
+        self.timeSlider.valueChanged.connect(self.player.setPosition)
+        self.player.durationChanged.connect(self.update_duration)
+        self.player.positionChanged.connect(self.update_position)
+        self.pausePushButton.clicked.connect(self.pause)
+        self.player.stateChanged.connect(self.stateChanged)
         # self.player.mediaChanged.connect(self.mediaCambio)
         # self.player.videoAvailableChanged.connect(self.conVideo)
+        self.fileMenu = QMenu("&File")
         # self.videoWidget = QVideoWidget()
         self.videoWidget = Video()
         # self.videoWidget.resize(QSize(400, 300))
@@ -66,7 +72,7 @@ class Jardin(QMainWindow):
         self.buscarPushButton.clicked.connect(self.buscar)
         # self.errorLabel.setStyleSheet("color: red")
         self.cb = QApplication.clipboard()
-        self.st = QSystemTrayIcon(QIcon(":/iconos/antena.png"))
+        self.st = QSystemTrayIcon(QIcon(":/iconos/play.png"))
         self.st.activated.connect(self.iconoClick)
         self.st.show()
         self.salirPushButton.clicked.connect(self.close)
@@ -144,17 +150,24 @@ class Jardin(QMainWindow):
         self.playingNow = urlPrev
         if urlPrev[:24] == "https://www.youtube.com/":
             url = self.prueboYoutube(urlPrev)
+            self.agregarHistorial(urlPrev, title)
         else:
             url =  urlPrev
+            self.agregarHistorial(url, title)
 
         self.player.setMedia(QtMultimedia.QMediaContent(QUrl(url)))
         self.titleLineEdit.setText(title)
         self.tagLineEdit.setText(tag)
         self.player.play()
-        self.agregarHistorial(url, title)
 
     def stop(self):
         self.player.stop()
+
+    def pause(self):
+        if self.player.state() == 2:
+            self.player.play()
+        else:
+            self.player.pause()
 
     def cambioVolumen(self):
         self.player.setVolume(self.volumeDial.value())
@@ -175,6 +188,10 @@ class Jardin(QMainWindow):
     def handleError(self, error):
         self.errorLabel.setText(self.player.errorString())
 
+    def stateChanged(self, state):
+        if state == 2: self.st.setIcon(QIcon(":/iconos/pause"))
+        if state == 1: self.st.setIcon(QIcon(":/iconos/play"))
+        if state == 0: self.st.setIcon(QIcon(":/iconos/stop"))
 
     def keyPressEvent(self, event):
         if self.focusWidget().objectName() == "buscarComboBox":
@@ -336,6 +353,20 @@ class Jardin(QMainWindow):
             self.favoritosTableWidget.item(rows, 2).setTextAlignment(Qt.AlignCenter)
             rows+=1
 
+        # context menu
+        testItems = []
+        for i in range(0, self.favoritosTableWidget.rowCount()):
+            testItems.append(self.favoritosTableWidget.item(i, 0).text())
+
+        self.fileMenu.clear()
+        for item in testItems:
+            print(item)
+            action = self.fileMenu.addAction(item)
+            action.triggered.connect(
+                lambda chk, item=item: self.printItem(item))
+        self.st.setContextMenu(self.fileMenu)
+
+
     def loadHistorial(self):
         query = QSqlQuery("SELECT * FROM historial ORDER BY id DESC")
         self.historialTableWidget.setRowCount(0)
@@ -405,10 +436,31 @@ class Jardin(QMainWindow):
             rows+=1
 
     def iconoClick(self, reason):
-        # print(self.player.state())
         if reason == 3:
-            if self.player.state() == 0: self.player.play()
-            if self.player.state() == 1: self.player.stop()
+            if self.player.state() == 2:
+                self.player.play()
+            else:
+                self.player.pause()
+
+    def update_duration(self, duration):
+        self.timeSlider.setMaximum(duration)
+
+        # if duration >= 0:
+            # self.totalTimeLabel.setText(hhmmss(duration))
+
+    def update_position(self, position):
+        # if position >= 0:
+            # self.currentTimeLabel.setText(hhmmss(position))
+
+        # Disable the events to prevent updating triggering a setPosition event (can cause stuttering).
+        self.timeSlider.blockSignals(True)
+        self.timeSlider.setValue(position)
+        self.timeSlider.blockSignals(False)
+
+
+    def printItem(self, item):
+        print("holis action")
+        print(item)
 
 def main():
     app = QApplication(sys.argv)
