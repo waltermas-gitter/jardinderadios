@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>808</width>
-    <height>665</height>
+    <width>770</width>
+    <height>660</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -31,7 +31,7 @@
        <enum>QTabWidget::Rounded</enum>
       </property>
       <property name="currentIndex">
-       <number>3</number>
+       <number>4</number>
       </property>
       <widget class="QWidget" name="favoritosTab">
        <attribute name="title">
@@ -97,7 +97,7 @@
       </widget>
       <widget class="QWidget" name="buscarTab">
        <attribute name="title">
-        <string>Buscar</string>
+        <string>RadioGarden</string>
        </attribute>
        <layout class="QHBoxLayout" name="horizontalLayout_3">
         <item>
@@ -227,6 +227,64 @@
          </layout>
         </item>
        </layout>
+      </widget>
+      <widget class="QWidget" name="lyricsTab">
+       <attribute name="title">
+        <string>Lyrics</string>
+       </attribute>
+       <widget class="QWidget" name="">
+        <property name="geometry">
+         <rect>
+          <x>2</x>
+          <y>12</y>
+          <width>708</width>
+          <height>302</height>
+         </rect>
+        </property>
+        <layout class="QHBoxLayout" name="horizontalLayout_8">
+         <item>
+          <widget class="QPlainTextEdit" name="lyricsTextEdit">
+           <property name="minimumSize">
+            <size>
+             <width>550</width>
+             <height>300</height>
+            </size>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <layout class="QFormLayout" name="formLayout">
+           <item row="0" column="0">
+            <widget class="QLabel" name="label">
+             <property name="text">
+              <string>Artist:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QLineEdit" name="artistLineEdit"/>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="label_2">
+             <property name="text">
+              <string>Song:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QLineEdit" name="songLineEdit"/>
+           </item>
+           <item row="2" column="1">
+            <widget class="QPushButton" name="lyricsPushButton">
+             <property name="text">
+              <string>Buscar</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </widget>
       </widget>
      </widget>
     </item>
@@ -380,7 +438,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>808</width>
+     <width>770</width>
      <height>22</height>
     </rect>
    </property>

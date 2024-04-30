@@ -13,6 +13,7 @@ import iconosResource_rc # pyrcc5 iconosResource.qrc -o iconosResource_rc.py
 import subprocess
 from qt_material import apply_stylesheet
 from youtubesearchpython import VideosSearch
+from lyricsgenius import Genius
 
 
 # Create the connection
@@ -116,6 +117,7 @@ class Jardin(QMainWindow):
         self.youtubeTableWidget.setColumnWidth(3,90)
         self.youtubeTableWidget.itemDoubleClicked.connect(self.playCurrent)
         self.ytBuscarPushButton.clicked.connect(self.buscarYoutube)
+        self.lyricsPushButton.clicked.connect(self.buscarLyrics)
 
         self.volumeDial.setMinimum(0)
         self.volumeDial.setMaximum(100)
@@ -136,6 +138,10 @@ class Jardin(QMainWindow):
         self.settings = QSettings( 'waltermas', 'jardinderadios')
         self.resize(self.settings.value("size", QSize(270, 225)))
         self.move(self.settings.value("pos", QPoint(50, 50)))
+        geniusToken = self.settings.value("geniusToken")
+        self.genius = Genius(geniusToken)
+        # self.settings.setValue("geniusToken","genius token here")
+
         self.show()
 
         self.playingNow = "radio"
@@ -431,6 +437,11 @@ class Jardin(QMainWindow):
         it = self.favoritosTableWidget.findItems(item, Qt.MatchExactly)
         self.favoritosTableWidget.setCurrentItem(self.favoritosTableWidget.item(it[0].row(),0))
         self.play(self.favoritosTableWidget.item(it[0].row(),1).text(), self.favoritosTableWidget.item(it[0].row(),0).text(), self.favoritosTableWidget.item(it[0].row(),2).text())
+
+    def buscarLyrics(self):
+        song = self.genius.search_song(self.artistLineEdit.text(), self.songLineEdit.text())
+        self.lyricsTextEdit.setPlainText(song.lyrics)
+
 
 def main():
     app = QApplication(sys.argv)
