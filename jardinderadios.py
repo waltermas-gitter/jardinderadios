@@ -64,7 +64,7 @@ class Jardin(QMainWindow):
         self.player.stateChanged.connect(self.stateChanged)
         # self.player.mediaChanged.connect(self.mediaCambio)
         # self.player.videoAvailableChanged.connect(self.conVideo)
-        self.fileMenu = QMenu("&File")
+
         self.videoWidget = Video()
         # self.videoWidget.resize(QSize(400, 300))
         self.videoPushButton.clicked.connect(self.showVideo)
@@ -74,6 +74,21 @@ class Jardin(QMainWindow):
         self.st = QSystemTrayIcon(QIcon(":/iconos/play.png"))
         self.st.activated.connect(self.iconoClick)
         self.st.show()
+        # menu
+        self.fileMenu = QMenu("File")
+        self.radiosMenu = QMenu("Radios")
+        action = self.fileMenu.addAction("Play")
+        action.triggered.connect(self.playCurrent)
+        action = self.fileMenu.addAction("Pause")
+        action.triggered.connect(self.pause)
+        action = self.fileMenu.addAction("Stop")
+        action.triggered.connect(self.stop)
+        action = self.fileMenu.addAction("Exit")
+        action.triggered.connect(self.close)
+
+        self.fileMenu.addMenu(self.radiosMenu)
+        self.st.setContextMenu(self.fileMenu)
+
         self.salirPushButton.clicked.connect(self.close)
         self.playPushButton.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
         self.playPushButton.clicked.connect(self.playCurrent)
@@ -143,8 +158,17 @@ class Jardin(QMainWindow):
         # self.settings.setValue("geniusToken","genius token here")
 
         self.show()
-
         self.playingNow = "radio"
+
+        # Cargar ultimo estado
+        query = QSqlQuery('SELECT valor FROM init WHERE desc="startState"')
+        query.last()
+        ultimoState = query.value(0)
+        if ultimoState == 1:
+            query = QSqlQuery('SELECT valor FROM init WHERE desc="startUrl"')
+            query.last()
+            ultimaRadio = query.value(0)
+            self.playContextMenu(ultimaRadio)
 
 
     def play(self, urlPrev, title, tag):
@@ -318,6 +342,8 @@ class Jardin(QMainWindow):
 
     def closeEvent(self, event):
         query = QSqlQuery("UPDATE init SET valor='%s' WHERE desc='volume'" % self.player.volume())
+        query = QSqlQuery("UPDATE init SET valor='%s' WHERE desc='startUrl'" % self.titleLineEdit.text())
+        query = QSqlQuery("UPDATE init SET valor='%s' WHERE desc='startState'" % self.player.state())
         con.close()
         self.settings.setValue("size", self.size())
         self.settings.setValue("pos", self.pos())
@@ -340,12 +366,12 @@ class Jardin(QMainWindow):
         for i in range(0, self.favoritosTableWidget.rowCount()):
             testItems.append(self.favoritosTableWidget.item(i, 0).text())
 
-        self.fileMenu.clear()
+        self.radiosMenu.clear()
         for item in testItems:
-            action = self.fileMenu.addAction(item)
+            action = self.radiosMenu.addAction(item)
             action.triggered.connect(
                 lambda chk, item=item: self.playContextMenu(item))
-        self.st.setContextMenu(self.fileMenu)
+        # self.st.setContextMenu(self.fileMenu)
 
 
     def loadHistorial(self):
