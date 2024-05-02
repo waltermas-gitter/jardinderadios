@@ -11,7 +11,7 @@ from PyQt5.QtMultimediaWidgets import QVideoWidget
 import requests
 import iconosResource_rc # pyrcc5 iconosResource.qrc -o iconosResource_rc.py
 import subprocess
-from qt_material import apply_stylesheet
+from qt_material import apply_stylesheet, list_themes
 from youtubesearchpython import VideosSearch
 from lyricsgenius import Genius
 
@@ -140,7 +140,6 @@ class Jardin(QMainWindow):
         query = QSqlQuery("SELECT valor FROM init WHERE desc='volume'")
         query.last()
         self.volumeDial.setValue(query.value(0))
-
         self.titleLineEdit.editingFinished.connect(self.cambioMetadata)
         self.tagLineEdit.editingFinished.connect(self.cambioMetadata)
 
@@ -156,6 +155,17 @@ class Jardin(QMainWindow):
         geniusToken = self.settings.value("geniusToken")
         self.genius = Genius(geniusToken)
         # self.settings.setValue("geniusToken","genius token here")
+        self.themeComboBox.addItems(list_themes())
+        query = QSqlQuery("SELECT valor FROM init WHERE desc = 'ultimoTheme'")
+        query.last()
+        indice = self.themeComboBox.findText(query.value(0))
+        self.themeComboBox.setCurrentIndex(indice)
+        if query.value(0)[0:1] == 'd':
+            self.titleLineEdit.setStyleSheet("color: white")
+            self.tagLineEdit.setStyleSheet("color: white")
+        else:
+            self.titleLineEdit.setStyleSheet("color: black")
+            self.tagLineEdit.setStyleSheet("color: black")
 
         self.show()
         self.playingNow = "radio"
@@ -169,6 +179,7 @@ class Jardin(QMainWindow):
             query.last()
             ultimaRadio = query.value(0)
             self.playContextMenu(ultimaRadio)
+
 
 
     def play(self, urlPrev, title, tag):
@@ -344,6 +355,7 @@ class Jardin(QMainWindow):
         query = QSqlQuery("UPDATE init SET valor='%s' WHERE desc='volume'" % self.player.volume())
         query = QSqlQuery("UPDATE init SET valor='%s' WHERE desc='startUrl'" % self.titleLineEdit.text())
         query = QSqlQuery("UPDATE init SET valor='%s' WHERE desc='startState'" % self.player.state())
+        query = QSqlQuery("UPDATE init SET valor='%s' WHERE desc='ultimoTheme'" % self.themeComboBox.currentText())
         con.close()
         self.settings.setValue("size", self.size())
         self.settings.setValue("pos", self.pos())
@@ -461,8 +473,9 @@ class Jardin(QMainWindow):
 
     def playContextMenu(self, item):
         it = self.favoritosTableWidget.findItems(item, Qt.MatchExactly)
-        self.favoritosTableWidget.setCurrentItem(self.favoritosTableWidget.item(it[0].row(),0))
-        self.play(self.favoritosTableWidget.item(it[0].row(),1).text(), self.favoritosTableWidget.item(it[0].row(),0).text(), self.favoritosTableWidget.item(it[0].row(),2).text())
+        if len(it) == 1:
+            self.favoritosTableWidget.setCurrentItem(self.favoritosTableWidget.item(it[0].row(),0))
+            self.play(self.favoritosTableWidget.item(it[0].row(),1).text(), self.favoritosTableWidget.item(it[0].row(),0).text(), self.favoritosTableWidget.item(it[0].row(),2).text())
 
     def buscarLyrics(self):
         song = self.genius.search_song(self.artistLineEdit.text(), self.songLineEdit.text())
@@ -471,7 +484,9 @@ class Jardin(QMainWindow):
 
 def main():
     app = QApplication(sys.argv)
-    apply_stylesheet(app, theme='dark_teal.xml')
+    query = QSqlQuery("SELECT valor FROM init WHERE desc = 'ultimoTheme'")
+    query.last()
+    apply_stylesheet(app, theme=query.value(0))
     ex = Jardin()
     sys.exit(app.exec_())
 
