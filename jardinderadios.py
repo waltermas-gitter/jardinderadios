@@ -14,7 +14,11 @@ import subprocess
 from qt_material import apply_stylesheet, list_themes
 from youtubesearchpython import VideosSearch
 from lyricsgenius import Genius
+from flask import Flask, render_template, request, redirect, url_for
+import threading
 
+app = Flask(__name__)
+ex = None
 
 # Create the connection
 con = QSqlDatabase.addDatabase("QSQLITE")
@@ -179,7 +183,11 @@ class Jardin(QMainWindow):
             query.last()
             ultimaRadio = query.value(0)
             self.playContextMenu(ultimaRadio)
-
+        # Server
+        local_port = 5000
+        port = int(os.environ.get('PORT', local_port))
+        kwargs = {'host': '0.0.0.0', 'port': port , 'threaded' : True, 'use_reloader': False, 'debug':False}
+        threading.Thread(target=app.run, daemon = True, kwargs=kwargs).start()
 
 
     def play(self, urlPrev, title, tag):
@@ -481,12 +489,42 @@ class Jardin(QMainWindow):
         song = self.genius.search_song(self.artistLineEdit.text(), self.songLineEdit.text())
         self.lyricsTextEdit.setPlainText(song.lyrics)
 
+# flask server
+@app.route("/")
+def index():
+    return 'works'
+
+@app.route("/volup")
+def volup():
+    nuevoValor = int(ex.volumeDial.value() * 1.2)
+    if nuevoValor > 100: nuevoValor = 100
+    ex.volumeDial.setValue(nuevoValor)
+    return "volumen %s" % nuevoValor
+
+@app.route("/voldown")
+def voldown():
+    nuevoValor = int(ex.volumeDial.value() * 0.8)
+    if nuevoValor < 0: nuevoValor = 0
+    ex.volumeDial.setValue(nuevoValor)
+    return "volumen %s" % nuevoValor
+
+@app.route("/yt/<name>")
+def yt(name):
+    ex.tabWidget.setCurrentIndex(3)
+    ex.youtubeComboBox.setCurrentText(name)
+    ex.buscarYoutube()
+    ex.youtubeTableWidget.setCurrentCell(0,1)
+    ex.playCurrent()
+    return name
+
+
 
 def main():
     app = QApplication(sys.argv)
     query = QSqlQuery("SELECT valor FROM init WHERE desc = 'ultimoTheme'")
     query.last()
     apply_stylesheet(app, theme=query.value(0))
+    global ex
     ex = Jardin()
     sys.exit(app.exec_())
 
