@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-import os, sys
+import os, sys, time
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
@@ -293,6 +293,7 @@ class Jardin(QMainWindow):
             url = "https://www.youtube.com/watch?v=%s" % idurl
             title = self.youtubeTableWidget.item(self.youtubeTableWidget.currentRow(),1).text()
             tag = "youtube music"
+            print(idurl, title, tag)
             self.play(url, title, tag)
 
 
@@ -492,21 +493,21 @@ class Jardin(QMainWindow):
 # flask server
 @app.route("/")
 def index():
-    return 'works'
+    return render_template('index.html', data='texto')
 
 @app.route("/volup")
 def volup():
     nuevoValor = int(ex.volumeDial.value() * 1.2)
     if nuevoValor > 100: nuevoValor = 100
     ex.volumeDial.setValue(nuevoValor)
-    return "volumen %s" % nuevoValor
+    return redirect(url_for('index'))
 
 @app.route("/voldown")
 def voldown():
     nuevoValor = int(ex.volumeDial.value() * 0.8)
     if nuevoValor < 0: nuevoValor = 0
     ex.volumeDial.setValue(nuevoValor)
-    return "volumen %s" % nuevoValor
+    return redirect(url_for('index'))
 
 @app.route("/yt/<name>")
 def yt(name):
@@ -517,7 +518,18 @@ def yt(name):
     ex.playCurrent()
     return name
 
-
+@app.route('/ytsearch', methods=['POST', 'GET'])
+def ytsearch():
+    if request.method == 'POST':
+        name = request.form['ytsearch']
+        ex.tabWidget.setCurrentIndex(3)
+        ex.youtubeComboBox.setCurrentText(name)
+        ex.buscarYoutube()
+        time.sleep(3)
+        ex.youtubeTableWidget.setCurrentCell(0,1)
+        ex.playCurrent()
+        # return redirect(url_for('index'))
+        return "playing %s" % name
 
 def main():
     app = QApplication(sys.argv)
