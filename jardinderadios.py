@@ -15,10 +15,6 @@ from qt_material import apply_stylesheet, list_themes
 from youtubesearchpython import VideosSearch
 from lyricsgenius import Genius
 from flask import Flask, render_template, request, redirect, url_for
-import threading
-
-app = Flask(__name__)
-ex = None
 
 # Create the connection
 con = QSqlDatabase.addDatabase("QSQLITE")
@@ -32,6 +28,40 @@ if not con.open():
         "Database Error: %s" % con.lastError().databaseText(),
     )
     sys.exit(1)
+
+class Worker(QObject):
+    ytstring = pyqtSignal(str)
+    subirvol = pyqtSignal()
+    bajarvol = pyqtSignal()
+
+    def __init__(self):
+        super().__init__()
+        self.app = Flask(__name__)
+        self.app.add_url_rule('/', 'index', self.index)
+        self.app.add_url_rule('/volup', 'volup', self.volup)
+        self.app.add_url_rule('/voldown', 'voldown', self.voldown)
+        self.app.add_url_rule('/ytsearch', 'ytsearch', self.ytsearch, methods=['POST'])
+
+    def run(self):
+        self.app.run(host='0.0.0.0')
+
+    def index(self):
+        return render_template('index.html')
+
+    def volup(self):
+        self.subirvol.emit()
+        return redirect(url_for('index'))
+
+    def voldown(self):
+        self.bajarvol.emit()
+        return redirect(url_for('index'))
+
+    def ytsearch(self):
+        name = request.form['ytsearch']
+        self.ytstring.emit(name)
+        return redirect(url_for('index'))
+
+
 
 class Video(QVideoWidget):
     def __init__(self):
@@ -187,7 +217,38 @@ class Jardin(QMainWindow):
         local_port = 5000
         port = int(os.environ.get('PORT', local_port))
         kwargs = {'host': '0.0.0.0', 'port': port , 'threaded' : True, 'use_reloader': False, 'debug':False}
-        threading.Thread(target=app.run, daemon = True, kwargs=kwargs).start()
+        # threading.Thread(target=app.run, daemon = True, kwargs=kwargs).start()
+        # worker = FlaskThread()
+        # worker.start()
+        self.thread = QThread()
+        self.worker = Worker()
+        self.worker.moveToThread(self.thread)
+        self.thread.started.connect(self.worker.run)
+        self.worker.ytstring.connect(self.flaskYtSearch)
+        self.worker.subirvol.connect(self.flaskVolUp)
+        self.worker.bajarvol.connect(self.flaskVolDown)
+
+        self.thread.start()
+
+    def flaskYtSearch(self, name):
+        self.tabWidget.setCurrentIndex(3)
+        self.youtubeComboBox.setCurrentText(name)
+        self.buscarYoutube()
+        self.youtubeTableWidget.setCurrentCell(0,1)
+        self.playCurrent()
+
+    def flaskVolUp(self):
+        nuevoValor = int(self.volumeDial.value() * 1.2)
+        if nuevoValor > 100: nuevoValor = 100
+        self.volumeDial.setValue(nuevoValor)
+
+    def flaskVolDown(self):
+        nuevoValor = int(self.volumeDial.value() * 0.8)
+        if nuevoValor < 0: nuevoValor = 0
+        self.volumeDial.setValue(nuevoValor)
+
+
+
 
 
     def play(self, urlPrev, title, tag):
@@ -293,7 +354,6 @@ class Jardin(QMainWindow):
             url = "https://www.youtube.com/watch?v=%s" % idurl
             title = self.youtubeTableWidget.item(self.youtubeTableWidget.currentRow(),1).text()
             tag = "youtube music"
-            print(idurl, title, tag)
             self.play(url, title, tag)
 
 
@@ -490,53 +550,17 @@ class Jardin(QMainWindow):
         song = self.genius.search_song(self.artistLineEdit.text(), self.songLineEdit.text())
         self.lyricsTextEdit.setPlainText(song.lyrics)
 
-# flask server
-@app.route("/")
-def index():
-    return render_template('index.html', data='texto')
 
-@app.route("/volup")
-def volup():
-    nuevoValor = int(ex.volumeDial.value() * 1.2)
-    if nuevoValor > 100: nuevoValor = 100
-    ex.volumeDial.setValue(nuevoValor)
-    return redirect(url_for('index'))
 
-@app.route("/voldown")
-def voldown():
-    nuevoValor = int(ex.volumeDial.value() * 0.8)
-    if nuevoValor < 0: nuevoValor = 0
-    ex.volumeDial.setValue(nuevoValor)
-    return redirect(url_for('index'))
 
-@app.route("/yt/<name>")
-def yt(name):
-    ex.tabWidget.setCurrentIndex(3)
-    ex.youtubeComboBox.setCurrentText(name)
-    ex.buscarYoutube()
-    ex.youtubeTableWidget.setCurrentCell(0,1)
-    ex.playCurrent()
-    return name
 
-@app.route('/ytsearch', methods=['POST', 'GET'])
-def ytsearch():
-    if request.method == 'POST':
-        name = request.form['ytsearch']
-        ex.tabWidget.setCurrentIndex(3)
-        ex.youtubeComboBox.setCurrentText(name)
-        ex.buscarYoutube()
-        time.sleep(3)
-        ex.youtubeTableWidget.setCurrentCell(0,1)
-        ex.playCurrent()
-        # return redirect(url_for('index'))
-        return "playing %s" % name
 
 def main():
     app = QApplication(sys.argv)
     query = QSqlQuery("SELECT valor FROM init WHERE desc = 'ultimoTheme'")
     query.last()
     apply_stylesheet(app, theme=query.value(0))
-    global ex
+    # global ex
     ex = Jardin()
     sys.exit(app.exec_())
 
