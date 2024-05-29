@@ -40,5 +40,11 @@
 </form>
 <!-- </div> -->
         </div>
+
+
+            {% for fav in favoritos %}
+            <p><a class="btn btn-outline-info" href="/favorito/{{fav[0]}}" role="button">{{fav[1]}}</a></p>
+            {% endfor %}
+
   </body>
 </html>

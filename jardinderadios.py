@@ -33,20 +33,23 @@ class Worker(QObject):
     ytstring = pyqtSignal(str)
     subirvol = pyqtSignal()
     bajarvol = pyqtSignal()
+    fav = pyqtSignal(str)
 
-    def __init__(self):
+    def __init__(self, favoritos):
         super().__init__()
+        self.favoritos = favoritos
         self.app = Flask(__name__)
         self.app.add_url_rule('/', 'index', self.index)
         self.app.add_url_rule('/volup', 'volup', self.volup)
         self.app.add_url_rule('/voldown', 'voldown', self.voldown)
         self.app.add_url_rule('/ytsearch', 'ytsearch', self.ytsearch, methods=['POST'])
+        self.app.add_url_rule('/favorito/<number>', 'favorito', self.favorito)
 
     def run(self):
         self.app.run(host='0.0.0.0')
 
     def index(self):
-        return render_template('index.html')
+        return render_template('index.html', favoritos=self.favoritos)
 
     def volup(self):
         self.subirvol.emit()
@@ -59,6 +62,10 @@ class Worker(QObject):
     def ytsearch(self):
         name = request.form['ytsearch']
         self.ytstring.emit(name)
+        return redirect(url_for('index'))
+
+    def favorito(self, number):
+        self.fav.emit(number)
         return redirect(url_for('index'))
 
 
@@ -213,21 +220,20 @@ class Jardin(QMainWindow):
             query.last()
             ultimaRadio = query.value(0)
             self.playContextMenu(ultimaRadio)
+
         # Server
-        local_port = 5000
-        port = int(os.environ.get('PORT', local_port))
-        kwargs = {'host': '0.0.0.0', 'port': port , 'threaded' : True, 'use_reloader': False, 'debug':False}
-        # threading.Thread(target=app.run, daemon = True, kwargs=kwargs).start()
-        # worker = FlaskThread()
-        # worker.start()
+        favoritos = []
+        for i in range(0, self.favoritosTableWidget.rowCount()):
+            favoritos.append([i, self.favoritosTableWidget.item(i,0).text()])
+
         self.thread = QThread()
-        self.worker = Worker()
+        self.worker = Worker(favoritos)
         self.worker.moveToThread(self.thread)
         self.thread.started.connect(self.worker.run)
         self.worker.ytstring.connect(self.flaskYtSearch)
         self.worker.subirvol.connect(self.flaskVolUp)
         self.worker.bajarvol.connect(self.flaskVolDown)
-
+        self.worker.fav.connect(self.flaskFavorito)
         self.thread.start()
 
     def flaskYtSearch(self, name):
@@ -247,6 +253,10 @@ class Jardin(QMainWindow):
         if nuevoValor < 0: nuevoValor = 0
         self.volumeDial.setValue(nuevoValor)
 
+    def flaskFavorito(self, number):
+        self.tabWidget.setCurrentIndex(0)
+        self.favoritosTableWidget.setCurrentCell(int(number),1)
+        self.playCurrent()
 
 
 
