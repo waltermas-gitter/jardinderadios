@@ -15,6 +15,7 @@
       integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe"
       crossorigin="anonymous"
     ></script>
+<link rel="icon" type="image/png" sizes="32x32" href="/static/musica.png">
 
     <title>Waltermas</title>
     <!-- <link rel="icon" type="image/x-icon" href="/images/favicon.png" /> -->
@@ -41,7 +42,14 @@
 <!-- </div> -->
         </div>
 
-
+        <div class="row p-3">
+            <div class="col-3">
+            <a class="btn btn-primary" href="/menos30" role="button">-30"</a>
+            </div>
+            <div class="col-3">
+            <a class="btn btn-primary" href="/mas30" role="button">+30"</a>
+            </div>
+        </div>
             {% for fav in favoritos %}
             <p><a class="btn btn-outline-info" href="/favorito/{{fav[0]}}" role="button">{{fav[1]}}</a></p>
             {% endfor %}

@@ -34,6 +34,8 @@ class Worker(QObject):
     subirvol = pyqtSignal()
     bajarvol = pyqtSignal()
     fav = pyqtSignal(str)
+    subir30 = pyqtSignal()
+    men30 = pyqtSignal()
 
     def __init__(self, favoritos):
         super().__init__()
@@ -44,6 +46,8 @@ class Worker(QObject):
         self.app.add_url_rule('/voldown', 'voldown', self.voldown)
         self.app.add_url_rule('/ytsearch', 'ytsearch', self.ytsearch, methods=['POST'])
         self.app.add_url_rule('/favorito/<number>', 'favorito', self.favorito)
+        self.app.add_url_rule('/menos30', 'menostreinta', self.menos30)
+        self.app.add_url_rule('/mas30', 'mastreinta', self.mas30)
 
     def run(self):
         self.app.run(host='0.0.0.0')
@@ -66,6 +70,15 @@ class Worker(QObject):
 
     def favorito(self, number):
         self.fav.emit(number)
+        return redirect(url_for('index'))
+
+    def menos30(self):
+        self.men30.emit()
+        return redirect(url_for('index'))
+
+
+    def mas30(self):
+        self.subir30.emit()
         return redirect(url_for('index'))
 
 
@@ -234,6 +247,9 @@ class Jardin(QMainWindow):
         self.worker.subirvol.connect(self.flaskVolUp)
         self.worker.bajarvol.connect(self.flaskVolDown)
         self.worker.fav.connect(self.flaskFavorito)
+        self.worker.subir30.connect(self.flaskMas30)
+        self.worker.men30.connect(self.flaskMen30)
+
         self.thread.start()
 
     def flaskYtSearch(self, name):
@@ -258,6 +274,16 @@ class Jardin(QMainWindow):
         self.favoritosTableWidget.setCurrentCell(int(number),1)
         self.playCurrent()
 
+    def flaskMen30(self):
+        pos = self.player.position()
+        nuevoPos = pos - 30000
+        if nuevoPos < 0: nuevoPos = 0
+        self.player.setPosition(nuevoPos)
+
+    def flaskMas30(self):
+        pos = self.player.position()
+        nuevoPos = pos + 30000
+        self.player.setPosition(nuevoPos)
 
 
 
