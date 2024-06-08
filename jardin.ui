@@ -305,7 +305,7 @@
       <property name="frameShadow">
        <enum>QFrame::Raised</enum>
       </property>
-      <layout class="QHBoxLayout" name="horizontalLayout_7">
+      <layout class="QHBoxLayout" name="horizontalLayout_9">
        <item>
         <layout class="QVBoxLayout" name="verticalLayout">
          <item>
@@ -385,11 +385,22 @@
           </layout>
          </item>
          <item>
-          <widget class="QSlider" name="timeSlider">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-          </widget>
+          <layout class="QHBoxLayout" name="horizontalLayout_7">
+           <item>
+            <widget class="QSlider" name="timeSlider">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="posLabel">
+             <property name="text">
+              <string/>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout_6">
@@ -413,7 +424,42 @@
        <item>
         <layout class="QVBoxLayout" name="verticalLayout_9">
          <item>
-          <widget class="QDial" name="volumeDial"/>
+          <layout class="QHBoxLayout" name="horizontalLayout_10">
+           <item>
+            <widget class="QSlider" name="volumeDial">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>0</height>
+              </size>
+             </property>
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="volumeLevelLabel">
+             <property name="font">
+              <font>
+               <family>Noto Sans</family>
+               <pointsize>20</pointsize>
+               <weight>75</weight>
+               <bold>true</bold>
+              </font>
+             </property>
+             <property name="layoutDirection">
+              <enum>Qt::LeftToRight</enum>
+             </property>
+             <property name="styleSheet">
+              <string notr="true">color: rgb(26, 95, 180);</string>
+             </property>
+             <property name="text">
+              <string>0</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
          <item>
           <widget class="QPushButton" name="videoPushButton">
@@ -461,7 +507,6 @@
   <tabstop>stopPushButton</tabstop>
   <tabstop>favPushButton</tabstop>
   <tabstop>upPushButton</tabstop>
-  <tabstop>volumeDial</tabstop>
   <tabstop>salirPushButton</tabstop>
   <tabstop>favoritosTableWidget</tabstop>
   <tabstop>clipboardPushButton</tabstop>

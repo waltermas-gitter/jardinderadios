@@ -15,6 +15,7 @@ from qt_material import apply_stylesheet, list_themes
 from youtubesearchpython import VideosSearch
 from lyricsgenius import Genius
 from flask import Flask, render_template, request, redirect, url_for
+import time
 
 # Create the connection
 con = QSqlDatabase.addDatabase("QSQLITE")
@@ -34,17 +35,20 @@ class Worker(QObject):
     subirvol = pyqtSignal()
     bajarvol = pyqtSignal()
     fav = pyqtSignal(str)
+    ytp = pyqtSignal(str)
     subir30 = pyqtSignal()
     men30 = pyqtSignal()
 
     def __init__(self, favoritos):
         super().__init__()
         self.favoritos = favoritos
+        self.ytresults = None
         self.app = Flask(__name__)
         self.app.add_url_rule('/', 'index', self.index)
         self.app.add_url_rule('/volup', 'volup', self.volup)
         self.app.add_url_rule('/voldown', 'voldown', self.voldown)
         self.app.add_url_rule('/ytsearch', 'ytsearch', self.ytsearch, methods=['POST'])
+        self.app.add_url_rule('/ytresult/<number>', 'ytresult', self.ytresult)
         self.app.add_url_rule('/favorito/<number>', 'favorito', self.favorito)
         self.app.add_url_rule('/menos30', 'menostreinta', self.menos30)
         self.app.add_url_rule('/mas30', 'mastreinta', self.mas30)
@@ -65,7 +69,14 @@ class Worker(QObject):
 
     def ytsearch(self):
         name = request.form['ytsearch']
+        self.ytresults = None
         self.ytstring.emit(name)
+        while not self.ytresults:
+            time.sleep(1)
+        return render_template('ytresults.html', results=self.ytresults)
+
+    def ytresult(self, number):
+        self.ytp.emit(number)
         return redirect(url_for('index'))
 
     def favorito(self, number):
@@ -247,6 +258,7 @@ class Jardin(QMainWindow):
         self.worker.subirvol.connect(self.flaskVolUp)
         self.worker.bajarvol.connect(self.flaskVolDown)
         self.worker.fav.connect(self.flaskFavorito)
+        self.worker.ytp.connect(self.flaskYtPlay)
         self.worker.subir30.connect(self.flaskMas30)
         self.worker.men30.connect(self.flaskMen30)
 
@@ -256,7 +268,13 @@ class Jardin(QMainWindow):
         self.tabWidget.setCurrentIndex(3)
         self.youtubeComboBox.setCurrentText(name)
         self.buscarYoutube()
-        self.youtubeTableWidget.setCurrentCell(0,1)
+        resp = []
+        for i in range(9):
+            resp.append([i, self.youtubeTableWidget.item(i,1).text()])
+        self.worker.ytresults = resp
+
+    def flaskYtPlay(self, number):
+        self.youtubeTableWidget.setCurrentCell(int(number), 1)
         self.playCurrent()
 
     def flaskVolUp(self):
@@ -312,6 +330,7 @@ class Jardin(QMainWindow):
 
     def cambioVolumen(self):
         self.player.setVolume(self.volumeDial.value())
+        self.volumeLevelLabel.setText(str(self.volumeDial.value()))
 
     def handleStateChanged(self, state):
         if state == 0: estado = "Unknowed"
@@ -574,6 +593,7 @@ class Jardin(QMainWindow):
         self.timeSlider.blockSignals(True)
         self.timeSlider.setValue(position)
         self.timeSlider.blockSignals(False)
+        self.posLabel.setText(time.strftime('%H:%M:%S', time.gmtime(position/1000)))
 
 
     def playContextMenu(self, item):
