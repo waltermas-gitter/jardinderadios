@@ -573,11 +573,12 @@ class Jardin(QMainWindow):
             rows+=1
 
     def iconoClick(self, reason):
+        print(self.player.state())
         if reason == 3:
-            if self.player.state() == 2:
+            if self.player.state() == 2 or self.player.state() == 0:
                 self.player.play()
             else:
-                self.player.pause()
+                self.player.stop()
 
     def update_duration(self, duration):
         self.timeSlider.setMaximum(duration)
