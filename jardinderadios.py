@@ -546,13 +546,26 @@ class Jardin(QMainWindow):
     def prueboYoutube(self, youtubeUrl):
         result = subprocess.run(['./get-stream.sh', youtubeUrl], stdout=subprocess.PIPE)
         url = result.stdout.decode('utf-8')
+        print(url)
         return url
 
 
     def showVideo(self):
-        self.player.setVideoOutput(self.videoWidget)
-        self.videoWidget.show()
-        self.playCurrent()
+        # self.player.setVideoOutput(self.videoWidget)
+        # self.videoWidget.show()
+        # self.playCurrent()
+        # youtubeUrl = self.player.currentMedia()
+        youtubeUrl = "https://www.youtube.com/watch?v=K8sq4LAYDc0"
+        self.vw = Video()
+        self.vw.show()
+        self.playerv = QtMultimedia.QMediaPlayer(self)
+        result = subprocess.run(['./get-stream-video.sh', youtubeUrl], stdout=subprocess.PIPE)
+        url = result.stdout.decode('utf-8')
+        print(url)
+        self.playerv.setMedia(QtMultimedia.QMediaContent(QUrl(url)))
+        self.playerv.setVideoOutput(self.vw)
+        self.playerv.play()
+
 
     def buscarYoutube(self):
         buscado = self.youtubeComboBox.currentText()
@@ -573,12 +586,14 @@ class Jardin(QMainWindow):
             rows+=1
 
     def iconoClick(self, reason):
+        print('reason', reason)
         print(self.player.state())
         if reason == 3:
-            if self.player.state() == 2 or self.player.state() == 0:
-                self.player.play()
+            if self.player.state() == 1:
+                self.stop()
             else:
-                self.player.stop()
+                self.stop()
+                self.player.play()
 
     def update_duration(self, duration):
         self.timeSlider.setMaximum(duration)
@@ -606,10 +621,6 @@ class Jardin(QMainWindow):
     # def buscarLyrics(self):
     #     song = self.genius.search_song(self.artistLineEdit.text(), self.songLineEdit.text())
     #     self.lyricsTextEdit.setPlainText(song.lyrics)
-
-
-
-
 
 
 def main():
