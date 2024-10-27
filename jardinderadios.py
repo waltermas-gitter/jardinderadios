@@ -546,22 +546,16 @@ class Jardin(QMainWindow):
     def prueboYoutube(self, youtubeUrl):
         result = subprocess.run(['./get-stream.sh', youtubeUrl], stdout=subprocess.PIPE)
         url = result.stdout.decode('utf-8')
-        print(url)
         return url
 
 
     def showVideo(self):
-        # self.player.setVideoOutput(self.videoWidget)
-        # self.videoWidget.show()
-        # self.playCurrent()
-        # youtubeUrl = self.player.currentMedia()
-        youtubeUrl = "https://www.youtube.com/watch?v=K8sq4LAYDc0"
+        youtubeUrl = self.playingNow 
         self.vw = Video()
         self.vw.show()
         self.playerv = QtMultimedia.QMediaPlayer(self)
         result = subprocess.run(['./get-stream-video.sh', youtubeUrl], stdout=subprocess.PIPE)
         url = result.stdout.decode('utf-8')
-        print(url)
         self.playerv.setMedia(QtMultimedia.QMediaContent(QUrl(url)))
         self.playerv.setVideoOutput(self.vw)
         self.playerv.play()
@@ -586,8 +580,6 @@ class Jardin(QMainWindow):
             rows+=1
 
     def iconoClick(self, reason):
-        print('reason', reason)
-        print(self.player.state())
         if reason == 3:
             if self.player.state() == 1:
                 self.stop()
